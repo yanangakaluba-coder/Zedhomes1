@@ -1,0 +1,264 @@
+import { useState, useEffect } from "react";
+
+const ZAMBIA_PROVINCES = {
+  "Lusaka": ["Lusaka", "Kafue", "Chongwe", "Luangwa", "Chilanga"],
+  "Copperbelt": ["Kitwe", "Ndola", "Mufulira", "Chingola", "Luanshya", "Kalulushi", "Chililabombwe"],
+  "Southern": ["Livingstone", "Choma", "Mazabuka", "Monze", "Siavonga", "Gwembe"],
+  "Eastern": ["Chipata", "Petauke", "Lundazi", "Katete", "Chadiza"],
+  "Northern": ["Kasama", "Mbala", "Mpika", "Chinsali", "Isoka"],
+  "Western": ["Mongu", "Kaoma", "Senanga", "Kalabo", "Lukulu"],
+  "Central": ["Kabwe", "Kapiri Mposhi", "Mkushi", "Serenje", "Chibombo"],
+  "North-Western": ["Solwezi", "Mwinilunga", "Kasempa", "Kabompo", "Chavuma"],
+  "Muchinga": ["Chinsali", "Nakonde", "Mpika", "Lavushimanda"],
+  "Luapula": ["Mansa", "Samfya", "Nchelenge", "Kawambwa", "Milenge"]
+};
+
+const CURRENCIES = [
+  { code: "ZMW", symbol: "K", name: "Zambian Kwacha", rate: 1 },
+  { code: "USD", symbol: "$", name: "US Dollar", rate: 0.038 },
+  { code: "GBP", symbol: "£", name: "British Pound", rate: 0.030 },
+  { code: "EUR", symbol: "€", name: "Euro", rate: 0.035 },
+  { code: "ZAR", symbol: "R", name: "South African Rand", rate: 0.70 },
+  { code: "CNY", symbol: "¥", name: "Chinese Yuan", rate: 0.275 },
+];
+
+const PROPERTY_TYPES = ["All", "House", "Apartment", "Villa", "Townhouse", "Land", "Commercial"];
+const AMENITIES_LIST = ["WiFi", "Parking", "Pool", "Security", "Garden", "Generator", "Borehole", "Solar", "DSTV", "Air Conditioning"];
+
+const SAMPLE_LISTINGS = [
+  {
+    id: 1, title: "Modern 4-Bed Villa", type: "Villa", status: "sale",
+    province: "Lusaka", town: "Lusaka", address: "Plot 47, Kabulonga Road, Kabulonga",
+    price: 2800000, beds: 4, baths: 3, sqm: 320, featured: true,
+    amenities: ["Pool", "Security", "Parking", "Garden", "WiFi"],
+    description: "Stunning modern villa in the prestigious Kabulonga neighborhood. Features open-plan living, chef's kitchen, and beautifully landscaped garden with pool.",
+    images: ["https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80", "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80"],
+    postedBy: "Mwamba Properties", postedDate: "2025-12-10", views: 342
+  },
+  {
+    id: 2, title: "Executive 3-Bed Apartment", type: "Apartment", status: "rent",
+    province: "Copperbelt", town: "Kitwe", address: "Flat 12, Parklands Towers, Nkana East",
+    price: 12000, beds: 3, baths: 2, sqm: 145, featured: true,
+    amenities: ["Security", "Parking", "WiFi", "Generator", "DSTV"],
+    description: "Fully serviced executive apartment in the heart of Kitwe. Perfect for expats and business professionals. 24-hour security and backup power.",
+    images: ["https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80", "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80"],
+    postedBy: "Chipata Real Estate", postedDate: "2025-12-14", views: 218
+  },
+  {
+    id: 3, title: "Cozy Family Home", type: "House", status: "rent",
+    province: "Southern", town: "Livingstone", address: "34 Mosi-oa-Tunya Road, Hillcrest",
+    price: 7500, beds: 3, baths: 2, sqm: 180, featured: false,
+    amenities: ["Garden", "Borehole", "Solar", "Parking"],
+    description: "Charming family home near Victoria Falls. Solar-powered with borehole water. Large garden great for kids.",
+    images: ["https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80"],
+    postedBy: "Victoria Homes", postedDate: "2025-12-20", views: 95
+  },
+  {
+    id: 4, title: "Luxury Penthouse", type: "Apartment", status: "sale",
+    province: "Lusaka", town: "Lusaka", address: "Penthouse A, Mukuba Towers, Longacres",
+    price: 4500000, beds: 5, baths: 4, sqm: 420, featured: true,
+    amenities: ["Pool", "Security", "Parking", "WiFi", "Air Conditioning", "DSTV", "Generator"],
+    description: "Extraordinary penthouse with panoramic views of Lusaka. State-of-the-art finishes, private rooftop terrace and concierge service.",
+    images: ["https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80"],
+    postedBy: "Elite Zambia Property", postedDate: "2025-12-05", views: 511
+  },
+  {
+    id: 5, title: "Riverside 2-Bed Townhouse", type: "Townhouse", status: "rent",
+    province: "Lusaka", town: "Kafue", address: "Unit 7, Kafue River Estate",
+    price: 5800, beds: 2, baths: 2, sqm: 110, featured: false,
+    amenities: ["Security", "Parking", "Garden"],
+    description: "Beautiful townhouse overlooking the Kafue River. Quiet, secure estate with communal garden. Ideal for couples or small families.",
+    images: ["https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80"],
+    postedBy: "Kafue Investments", postedDate: "2025-12-18", views: 73
+  },
+  {
+    id: 6, title: "Commercial Plot 2000sqm", type: "Land", status: "sale",
+    province: "Copperbelt", town: "Ndola", address: "Stand 1203, Great North Road, Ndola Central",
+    price: 1200000, beds: 0, baths: 0, sqm: 2000, featured: false,
+    amenities: [],
+    description: "Prime commercial land on the busy Great North Road in Ndola. Title deed available. Ideal for retail, offices or a mixed-use development.",
+    images: ["https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"],
+    postedBy: "Copperbelt Land Brokers", postedDate: "2025-12-22", views: 44
+  },
+];
+
+function formatPrice(zmw, currCode) {
+  const c = CURRENCIES.find(x => x.code === currCode) || CURRENCIES[0];
+  const v = zmw * c.rate;
+  const formatted = v >= 1000000 ? (v / 1000000).toFixed(2) + "M" : v >= 1000 ? (v / 1000).toFixed(1) + "K" : Math.round(v).toLocaleString();
+  return `${c.symbol}${formatted}`;
+}
+
+function timeAgo(dateStr) {
+  const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return `${Math.floor(days / 7)} weeks ago`;
+}
+
+function Logo() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ width: 40, height: 40, background: "linear-gradient(135deg,#E8B84B,#C8922A)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 20, color: "#fff", fontFamily: "Georgia, serif" }}>Z</div>
+      <div>
+        <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 20, color: "#1A1A2E", letterSpacing: -0.5, lineHeight: 1 }}>Zed Homes</div>
+        <div style={{ fontSize: 9, color: "#E8B84B", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Zambia's #1 Property</div>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ msg, type }) {
+  return (
+    <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, background: type === "error" ? "#fff0f0" : "#f0fdf4", border: `1px solid ${type === "error" ? "#fca5a5" : "#86efac"}`, color: type === "error" ? "#dc2626" : "#15803d", padding: "14px 22px", borderRadius: 14, fontWeight: 600, fontSize: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.15)" }}>
+      {msg}
+    </div>
+  );
+}
+
+function PropertyCard({ listing, currency, onClick }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const [hov, setHov] = useState(false);
+  return (
+    <div onClick={onClick}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background: "#fff", borderRadius: 18, overflow: "hidden", cursor: "pointer", transition: "transform 0.22s, box-shadow 0.22s", transform: hov ? "translateY(-5px)" : "translateY(0)", boxShadow: hov ? "0 16px 50px rgba(0,0,0,0.14)" : "0 2px 16px rgba(0,0,0,0.07)", border: "1px solid #f0ede4" }}>
+      <div style={{ position: "relative", height: 215, overflow: "hidden", background: "#f5f5f0" }}>
+        <img src={listing.images[imgIdx]} alt={listing.title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s", transform: hov ? "scale(1.05)" : "scale(1)" }} />
+        <div style={{ position: "absolute", top: 13, left: 13, display: "flex", gap: 6 }}>
+          <span style={{ background: listing.status === "sale" ? "#1A1A2E" : "#16a34a", color: "#fff", fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 20, textTransform: "uppercase", letterSpacing: 0.8 }}>{listing.status === "sale" ? "For Sale" : "For Rent"}</span>
+          {listing.featured && <span style={{ background: "#E8B84B", color: "#1A1A2E", fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 20 }}>⭐ Featured</span>}
+        </div>
+        <button onClick={e => { e.stopPropagation(); setSaved(!saved); }} style={{ position: "absolute", top: 13, right: 13, width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.95)", border: "none", cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>{saved ? "❤️" : "🤍"}</button>
+        {listing.images.length > 1 && (
+          <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4 }}>
+            {listing.images.map((_, i) => <div key={i} onClick={e => { e.stopPropagation(); setImgIdx(i); }} style={{ width: i === imgIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === imgIdx ? "#E8B84B" : "rgba(255,255,255,0.6)", transition: "width 0.2s", cursor: "pointer" }} />)}
+          </div>
+        )}
+        <div style={{ position: "absolute", bottom: 10, right: 13, fontSize: 11, color: "rgba(255,255,255,0.9)", background: "rgba(0,0,0,0.45)", padding: "2px 8px", borderRadius: 10 }}>👁 {listing.views}</div>
+      </div>
+      <div style={{ padding: "18px 20px 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 16, color: "#1A1A2E", lineHeight: 1.2, flex: 1, marginRight: 8 }}>{listing.title}</div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: "#C8922A", whiteSpace: "nowrap" }}>{formatPrice(listing.price, currency)}{listing.status === "rent" && <span style={{ fontSize: 10, color: "#999", fontWeight: 500 }}>/mo</span>}</div>
+        </div>
+        <div style={{ fontSize: 12, color: "#999", marginBottom: 12 }}>📍 {listing.address}, {listing.town}, {listing.province}</div>
+        <div style={{ display: "flex", gap: 14, marginBottom: 12 }}>
+          {listing.beds > 0 && <span style={{ fontSize: 13, color: "#555" }}>🛏 {listing.beds}</span>}
+          {listing.baths > 0 && <span style={{ fontSize: 13, color: "#555" }}>🚿 {listing.baths}</span>}
+          <span style={{ fontSize: 13, color: "#555" }}>📐 {listing.sqm}m²</span>
+        </div>
+        {listing.amenities.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
+            {listing.amenities.slice(0, 4).map(a => <span key={a} style={{ background: "#f5f3ec", color: "#666", fontSize: 11, padding: "3px 8px", borderRadius: 8 }}>{a}</span>)}
+            {listing.amenities.length > 4 && <span style={{ background: "#f5f3ec", color: "#999", fontSize: 11, padding: "3px 8px", borderRadius: 8 }}>+{listing.amenities.length - 4}</span>}
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "1px solid #f0ede4" }}>
+          <div style={{ fontSize: 11, color: "#bbb" }}>{listing.postedBy} · {timeAgo(listing.postedDate)}</div>
+          <span style={{ background: "#f5f3ec", color: "#888", fontSize: 11, padding: "3px 10px", borderRadius: 10 }}>{listing.type}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Overlay({ onClose, children }) {
+  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 22, maxWidth: 780, width: "100%", maxHeight: "92vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ListingDetail({ listing, currency, onClose }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const [showContact, setShowContact] = useState(false);
+  return (
+    <Overlay onClose={onClose}>
+      <div style={{ borderRadius: "22px 22px 0 0", overflow: "hidden", position: "relative" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, zIndex: 10, width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.95)", border: "none", cursor: "pointer", fontSize: 18 }}>✕</button>
+        <div style={{ height: 320, position: "relative" }}>
+          <img src={listing.images[imgIdx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", top: 14, left: 14 }}>
+            <span style={{ background: listing.status === "sale" ? "#1A1A2E" : "#16a34a", color: "#fff", fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 20, textTransform: "uppercase" }}>{listing.status === "sale" ? "For Sale" : "For Rent"}</span>
+          </div>
+          {listing.images.length > 1 && (
+            <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6 }}>
+              {listing.images.map((_, i) => <div key={i} onClick={() => setImgIdx(i)} style={{ width: i === imgIdx ? 24 : 8, height: 8, borderRadius: 4, background: i === imgIdx ? "#E8B84B" : "rgba(255,255,255,0.55)", cursor: "pointer", transition: "width 0.2s" }} />)}
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ padding: "28px 32px 32px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <h2 style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 26, color: "#1A1A2E", margin: 0 }}>{listing.title}</h2>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontWeight: 800, fontSize: 26, color: "#C8922A" }}>{formatPrice(listing.price, currency)}</div>
+            {listing.status === "rent" && <div style={{ fontSize: 12, color: "#999" }}>per month</div>}
+          </div>
+        </div>
+        <p style={{ color: "#999", margin: "0 0 20px", fontSize: 14 }}>📍 {listing.address}, {listing.town}, {listing.province} Province, Zambia</p>
+        <div style={{ display: "flex", gap: 20, marginBottom: 24, padding: "16px", background: "#f9f8f5", borderRadius: 14 }}>
+          {listing.beds > 0 && <div style={{ textAlign: "center" }}><div style={{ fontSize: 22 }}>🛏</div><div style={{ fontWeight: 700, fontSize: 17 }}>{listing.beds}</div><div style={{ fontSize: 11, color: "#999" }}>Beds</div></div>}
+          {listing.baths > 0 && <div style={{ textAlign: "center" }}><div style={{ fontSize: 22 }}>🚿</div><div style={{ fontWeight: 700, fontSize: 17 }}>{listing.baths}</div><div style={{ fontSize: 11, color: "#999" }}>Baths</div></div>}
+          <div style={{ textAlign: "center" }}><div style={{ fontSize: 22 }}>📐</div><div style={{ fontWeight: 700, fontSize: 17 }}>{listing.sqm}</div><div style={{ fontSize: 11, color: "#999" }}>m²</div></div>
+          <div style={{ textAlign: "center" }}><div style={{ fontSize: 22 }}>🏠</div><div style={{ fontWeight: 700, fontSize: 14 }}>{listing.type}</div><div style={{ fontSize: 11, color: "#999" }}>Type</div></div>
+        </div>
+        <h3 style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 18, color: "#1A1A2E", marginBottom: 10 }}>About this property</h3>
+        <p style={{ color: "#555", lineHeight: 1.75, fontSize: 14, marginBottom: 24 }}>{listing.description}</p>
+        {listing.amenities.length > 0 && (
+          <>
+            <h3 style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 18, color: "#1A1A2E", marginBottom: 12 }}>Amenities</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+              {listing.amenities.map(a => <span key={a} style={{ background: "#f0fdf4", color: "#16a34a", fontWeight: 600, fontSize: 13, padding: "6px 14px", borderRadius: 20, border: "1px solid #bbf7d0" }}>✓ {a}</span>)}
+            </div>
+          </>
+        )}
+        <h3 style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 18, color: "#1A1A2E", marginBottom: 14 }}>Price in Multiple Currencies</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 28 }}>
+          {CURRENCIES.map(c => (
+            <div key={c.code} style={{ background: "#f9f8f5", padding: "12px 14px", borderRadius: 12, border: "1px solid #eee" }}>
+              <div style={{ fontSize: 11, color: "#aaa", marginBottom: 2 }}>{c.name}</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#1A1A2E" }}>{c.symbol}{(listing.price * c.rate).toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+              <div style={{ fontSize: 10, color: "#ccc" }}>{c.code}{listing.status === "rent" ? "/mo" : ""}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button onClick={() => setShowContact(!showContact)} style={{ flex: 1, padding: "14px 0", background: "linear-gradient(135deg,#E8B84B,#C8922A)", color: "#fff", fontWeight: 700, fontSize: 15, borderRadius: 14, border: "none", cursor: "pointer" }}>📞 Contact Agent</button>
+          <button style={{ flex: 1, padding: "14px 0", background: "#1A1A2E", color: "#fff", fontWeight: 700, fontSize: 15, borderRadius: 14, border: "none", cursor: "pointer" }}>💬 WhatsApp</button>
+        </div>
+        {showContact && (
+          <div style={{ marginTop: 14, padding: "16px 20px", background: "#f0fdf4", borderRadius: 14, border: "1px solid #bbf7d0" }}>
+            <div style={{ fontWeight: 700, color: "#1A1A2E", marginBottom: 4 }}>{listing.postedBy}</div>
+            <div style={{ color: "#555", fontSize: 14 }}>📱 +260 97X XXX XXX</div>
+            <div style={{ color: "#555", fontSize: 14 }}>✉️ contact@zedhomes.zm</div>
+          </div>
+        )}
+      </div>
+    </Overlay>
+  );
+}
+
+function UploadModal({ onClose, onSubmit }) {
+  const [form, setForm] = useState({ title: "", type: "House", status: "sale", province: "Lusaka", town: "Lusaka", address: "", price: "", beds: "", baths: "", sqm: "", description: "", postedBy: "", amenities: [], imageUrl: "" });
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const toggleAmenity = a => set("amenities", form.amenities.includes(a) ? form.amenities.filter(x => x !== a) : [...form.amenities, a]);
+
+  return (
+    <Overlay onClose={onClose}>
+      <div style={{ padding: "32px" }}>
+        <button onClick={onClose} style={{ float: "right", background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#999" }}>✕</button>
+        <h2 style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 26, color: "#1A1A2E", marginBottom: 4 }}>List Your Property</h2>
+        <p style={{ color: "#999", marginBottom: 26, fontSize: 14 }}>Add your Zambian property to Zed Homes — it's free.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          {[["title", "Property Title *", "text"], ["postedBy", "Your Name / Agency *", "text"], ["price", "Price (ZMW) *", "number"], ["sqm", "Size (m²)", "number"], ["beds", "Bedrooms", "number"], ["baths", "Bathrooms", "number"]].map(([k, label, t]) => (
+            <div key={k}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 5 }}>{label}</label>
+              <input type={t} value={form[k]} onChange={e => set(k, e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "
